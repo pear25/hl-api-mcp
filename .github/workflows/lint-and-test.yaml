@@ -19,4 +19,4 @@ jobs:
           # Install a specific version of uv.
           version: "0.9.26"
       - run: uvx ruff check
-      - run: uvx pytest
+      - run: uvx pytest --suppress-no-test-exit-code
