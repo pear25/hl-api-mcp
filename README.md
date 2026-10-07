@@ -32,7 +32,7 @@ A **read-only** MCP server for Hyperliquid's public info API, plus a Claude-powe
 Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone <repo-url> && cd hl-mcp
+git clone https://github.com/pear25/hl-api-mcp.git && cd hl-api-mcp
 uv sync
 cp .env.example .env   # then fill in values
 ```
