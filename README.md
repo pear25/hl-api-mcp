@@ -34,6 +34,7 @@ Requires Python 3.12 and [uv](https://docs.astral.sh/uv/).
 ```bash
 git clone <repo-url> && cd hl-mcp
 uv sync
+cp .env.example .env   # then fill in values
 ```
 
 Run lint and tests:
