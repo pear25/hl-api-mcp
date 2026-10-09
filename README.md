@@ -2,7 +2,7 @@
 
 A **read-only** MCP server for Hyperliquid's public info API, plus a Claude-powered trading copilot that answers questions about a trading book and sends a daily brief.
 
-> **Status:** early development (M0: repo and CI skeleton). Most features below are planned, not built yet. See [the build plan](Hyperliquid_MCP_Agent_Build_Plan.md).
+> **Status:** early development. M0 (repo and CI skeleton) is done; M1 (typed Hyperliquid client) is in progress. Most features below are planned, not built yet. See [the build plan](Hyperliquid_MCP_Agent_Build_Plan.md).
 
 ## Security model
 
@@ -58,8 +58,8 @@ Python 3.12 · uv · httpx (async) · Pydantic v2 (Decimal for all numbers) · F
 
 | # | Milestone | Status |
 | --- | --- | --- |
-| M0 | Repo and CI skeleton | In progress |
-| M1 | Typed Hyperliquid client | Planned |
+| M0 | Repo and CI skeleton | Done |
+| M1 | Typed Hyperliquid client | In progress |
 | M2 | MCP server v1 | Planned |
 | M3 | Deterministic analytics (PnL and risk) | Planned |
 | M4 | Guardrails and ops | Planned |
