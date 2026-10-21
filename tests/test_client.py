@@ -102,6 +102,12 @@ async def test_candle_snapshot_prefixes_dex(info_mock, client):
     assert body["req"]["coin"] == "xyz:FOO"
 
 
+async def test_perp_dexs(info_mock, client):
+    dexs = await client.perp_dexs()
+    assert dexs[0] is None
+    assert dexs[1].name == "xyz"
+
+
 async def test_none_fields_are_dropped(info_mock, client):
     route, _ = info_mock
     await client.meta()

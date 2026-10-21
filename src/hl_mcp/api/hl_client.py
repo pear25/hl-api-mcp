@@ -13,6 +13,7 @@ from .models import (
     FundingHistoryEntry,
     L2Book,
     Meta,
+    PerpDex,
     UserFunding,
 )
 from .types import Network
@@ -25,6 +26,7 @@ _USER_FUNDING = TypeAdapter(list[UserFunding])
 _FUNDING_HISTORY = TypeAdapter(list[FundingHistoryEntry])
 _CANDLES = TypeAdapter(list[Candle])
 _MIDS = TypeAdapter(dict[str, Decimal])
+_PERP_DEXS = TypeAdapter(list[PerpDex | None])
 
 
 class HyperliquidClient:
@@ -71,6 +73,11 @@ class HyperliquidClient:
     async def meta(self, dex: str | None = None) -> Meta:
         data = await self._post({"type": "meta", "dex": dex})
         return Meta.model_validate(data)
+
+    async def perp_dexs(self) -> list[PerpDex | None]:
+        """All perp dexes; the first entry is None and stands for the main dex."""
+        data = await self._post({"type": "perpDexs"})
+        return _PERP_DEXS.validate_python(data)
 
     async def meta_and_asset_ctxs(
         self, dex: str | None = None
