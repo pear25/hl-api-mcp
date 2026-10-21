@@ -21,5 +21,7 @@ jobs:
         with:
           # Install a specific version of uv.
           version: "0.9.26"
-      - run: uvx ruff check
-      - run: uvx --with pytest-custom-exit-code pytest --suppress-no-test-exit-code
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run pytest
