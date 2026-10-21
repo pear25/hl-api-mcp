@@ -22,6 +22,7 @@ FIXTURE_FOR_TYPE = {
     "userFunding": "user_funding",
     "fundingHistory": "funding_history",
     "candleSnapshot": "candle_snapshot",
+    "perpDexs": "perp_dexs",
 }
 
 ADDRESS = "0x010461c14e146ac35fe42271bdc1134ee31c703a"
@@ -36,7 +37,8 @@ def info_mock():
     """Route POST /info to the recorded fixture for the request's type.
 
     Yields (route, overrides); set overrides[type] to a list or callable to
-    replace a fixture for one test.
+    replace a fixture for one test. Requests with a dex use <fixture>_<dex>.json
+    when one exists.
     """
     overrides: dict = {}
 
@@ -46,7 +48,10 @@ def info_mock():
         if kind in overrides:
             o = overrides[kind]
             return httpx.Response(200, json=o(body) if callable(o) else o)
-        return httpx.Response(200, json=load_fixture(FIXTURE_FOR_TYPE[kind]))
+        name = FIXTURE_FOR_TYPE[kind]
+        if (FIXTURES / f"{name}_{body.get('dex')}.json").exists():
+            name = f"{name}_{body['dex']}"
+        return httpx.Response(200, json=load_fixture(name))
 
     with respx.mock(assert_all_called=False) as router:
         route = router.post(f"{BASE_URLS['mainnet']}/info").mock(side_effect=respond)
