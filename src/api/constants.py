@@ -1,1 +1,9 @@
-BASE_URL = "https://api.hyperliquid.xyz"  # Add testnet toggle too?
+from typing import Literal
+
+Network = Literal["mainnet"] | Literal["testnet"]
+
+
+BASE_URLS: dict[Network, str] = {
+    "mainnet": "https://api.hyperliquid.xyz",
+    "testnet": "https://api.hyperliquid-testnet.xyz",
+}
