@@ -1,12 +1,30 @@
 import asyncio
+from decimal import Decimal
 
 import httpx
+from pydantic import TypeAdapter
 
 from .constants import BASE_URLS
-from .models import ClearinghouseState, Meta
+from .models import (
+    AssetCtx,
+    Candle,
+    ClearinghouseState,
+    Fill,
+    FundingHistoryEntry,
+    L2Book,
+    Meta,
+    UserFunding,
+)
 from .types import Network
 
 RETRY_STATUSES = {429, 500, 502, 503, 504}
+
+_META_AND_CTXS = TypeAdapter(tuple[Meta, list[AssetCtx]])
+_FILLS = TypeAdapter(list[Fill])
+_USER_FUNDING = TypeAdapter(list[UserFunding])
+_FUNDING_HISTORY = TypeAdapter(list[FundingHistoryEntry])
+_CANDLES = TypeAdapter(list[Candle])
+_MIDS = TypeAdapter(dict[str, Decimal])
 
 
 class HyperliquidClient:
@@ -26,11 +44,9 @@ class HyperliquidClient:
         self.max_retries = max_retries
 
     async def __aenter__(self):
-        print("creating a client instance...")
         return self
 
     async def __aexit__(self, *exc):
-        print("closing a client instance...")
         await self.http.aclose()
 
     async def _post(self, body: dict):
@@ -48,15 +64,19 @@ class HyperliquidClient:
                     return res.json()
             await asyncio.sleep(0.5 * 2**tries)
 
-    async def l2_book(self, coin: str):
-        return await self._post({"type": "l2Book", "coin": coin})
+    async def l2_book(self, coin: str) -> L2Book:
+        data = await self._post({"type": "l2Book", "coin": coin})
+        return L2Book.model_validate(data)
 
     async def meta(self, dex: str | None = None) -> Meta:
         data = await self._post({"type": "meta", "dex": dex})
         return Meta.model_validate(data)
 
-    async def meta_and_asset_ctxs(self, dex: str | None = None):
-        return await self._post({"type": "metaAndAssetCtxs", "dex": dex})
+    async def meta_and_asset_ctxs(
+        self, dex: str | None = None
+    ) -> tuple[Meta, list[AssetCtx]]:
+        data = await self._post({"type": "metaAndAssetCtxs", "dex": dex})
+        return _META_AND_CTXS.validate_python(data)
 
     async def clearinghouse_state(
         self, user: str, dex: str | None = None
@@ -66,10 +86,13 @@ class HyperliquidClient:
         )
         return ClearinghouseState.model_validate(data)
 
-    async def user_fills(self, user: str, aggregate_by_time: bool = False):
-        return await self._post(
+    async def user_fills(
+        self, user: str, aggregate_by_time: bool = False
+    ) -> list[Fill]:
+        data = await self._post(
             {"type": "userFills", "user": user, "aggregateByTime": aggregate_by_time}
         )
+        return _FILLS.validate_python(data)
 
     async def user_fills_by_time(
         self,
@@ -77,21 +100,22 @@ class HyperliquidClient:
         start_time: int,
         end_time: int | None = None,
         aggregate_by_time: bool = False,
-    ):
-        return await self._post(
+    ) -> list[Fill]:
+        data = await self._post(
             {
                 "type": "userFillsByTime",
                 "user": user,
                 "startTime": start_time,
                 "endTime": end_time,
                 "aggregateByTime": aggregate_by_time,
-            }   
+            }
         )
+        return _FILLS.validate_python(data)
 
     async def user_funding(
         self, user: str, start_time: int, end_time: int | None = None
-    ):
-        return await self._post(
+    ) -> list[UserFunding]:
+        data = await self._post(
             {
                 "type": "userFunding",
                 "user": user,
@@ -99,11 +123,12 @@ class HyperliquidClient:
                 "endTime": end_time,
             }
         )
+        return _USER_FUNDING.validate_python(data)
 
     async def funding_history(
         self, coin: str, start_time: int, end_time: int | None = None
-    ):
-        return await self._post(
+    ) -> list[FundingHistoryEntry]:
+        data = await self._post(
             {
                 "type": "fundingHistory",
                 "coin": coin,
@@ -111,6 +136,7 @@ class HyperliquidClient:
                 "endTime": end_time,
             }
         )
+        return _FUNDING_HISTORY.validate_python(data)
 
     async def candle_snapshot(
         self,
@@ -119,8 +145,8 @@ class HyperliquidClient:
         start_time: int,
         end_time: int,
         dex: str | None = None,
-    ):
-        return await self._post(
+    ) -> list[Candle]:
+        data = await self._post(
             {
                 "type": "candleSnapshot",
                 "req": {
@@ -131,9 +157,11 @@ class HyperliquidClient:
                 },
             }
         )
+        return _CANDLES.validate_python(data)
 
-    async def all_mids(self, dex: str | None = None):
-        return await self._post({"type": "allMids", "dex": dex})
+    async def all_mids(self, dex: str | None = None) -> dict[str, Decimal]:
+        data = await self._post({"type": "allMids", "dex": dex})
+        return _MIDS.validate_python(data)
 
     # async def user_open_orders(self, user: str, dex: str):
     #     # if not validate_user(user):

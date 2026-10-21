@@ -1,7 +1,4 @@
-from typing import Literal
-
-Network = Literal["mainnet"] | Literal["testnet"]
-
+from .types import Network
 
 BASE_URLS: dict[Network, str] = {
     "mainnet": "https://api.hyperliquid.xyz",
