@@ -82,20 +82,38 @@ def validate_address(address: str | None, default: str | None = None) -> str:
     return address.lower()
 
 
+async def _validate_dex(client: HyperliquidClient, dex: str) -> None:
+    # an unknown dex comes back as HTTP 500, which would be retried; check first
+    names = [d.name for d in await client.perp_dexs() if d is not None]
+    if dex not in names:
+        raise HLToolError(f"unknown dex {dex!r}; available: {', '.join(names)}")
+
+
 async def _resolve_coin(
-    client: HyperliquidClient, coin: str
+    client: HyperliquidClient, coin: str, dex: str | None = None
 ) -> tuple[AssetMeta, AssetCtx]:
-    meta, ctxs = await client.meta_and_asset_ctxs()
+    """Find a perp on the main dex, or on a HIP-3 dex given as `dex` or as a
+    "dex:COIN" prefix. HIP-3 asset names already carry the prefix."""
+    name = coin.strip()
+    if not dex and ":" in name:
+        dex, name = name.split(":", 1)
+    dex = (dex or "").strip().lower() or None
+    if dex:
+        await _validate_dex(client, dex)
+    meta, ctxs = await client.meta_and_asset_ctxs(dex)
     by_name = {
         a.name.upper(): (a, ctx) for a, ctx in zip(meta.universe, ctxs, strict=True)
     }
-    key = coin.strip().upper()
+    key = f"{dex}:{name}".upper() if dex else name.upper()
     if key in by_name:
         return by_name[key]
     live = [a.name for a in meta.universe if not a.isDelisted]
     close = difflib.get_close_matches(key, [n.upper() for n in live], n=3)
     hint = f"; did you mean {', '.join(close)}?" if close else ""
-    raise HLToolError(f"unknown coin {coin!r}{hint}")
+    if not dex:
+        hint += " (for a HIP-3 market, pass its dex, e.g. xyz)"
+    where = f" on dex {dex!r}" if dex else ""
+    raise HLToolError(f"unknown coin {coin!r}{where}{hint}")
 
 
 # --- pagination ---
@@ -130,8 +148,10 @@ async def _paginate[TT: _Timed](
 # --- tools ---
 
 
-async def get_market_snapshot(client: HyperliquidClient, coin: str) -> str:
-    asset, ctx = await _resolve_coin(client, coin)
+async def get_market_snapshot(
+    client: HyperliquidClient, coin: str, dex: str | None = None
+) -> str:
+    asset, ctx = await _resolve_coin(client, coin, dex)
     change = (
         (ctx.markPx - ctx.prevDayPx) / ctx.prevDayPx if ctx.prevDayPx else Decimal(0)
     )

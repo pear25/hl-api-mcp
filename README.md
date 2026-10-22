@@ -16,7 +16,7 @@ A **read-only** MCP server for Hyperliquid's public info API, plus a Claude-powe
 
 | Tool | Returns | Status |
 | --- | --- | --- |
-| `get_market_snapshot(coin)` | Mark/oracle price, 24h change, funding, open interest, volume | Built |
+| `get_market_snapshot(coin, dex=None)` | Mark/oracle price, 24h change, funding, open interest, volume; `dex` (or a `xyz:DRAM` coin) targets a HIP-3 dex | Built |
 | `get_order_book(coin, depth=10)` | Top-of-book levels and spread | Built |
 | `get_account_summary(address)` | Account value, notional, leverage, margin | Built |
 | `get_positions(address, limit=20)` | Open positions, largest first | Built |

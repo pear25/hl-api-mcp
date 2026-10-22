@@ -72,6 +72,37 @@ async def test_market_snapshot_flags_delisted(info_mock, client):
     assert "DELISTED" in out
 
 
+@pytest.mark.parametrize(
+    "coin, dex", [("dram", "xyz"), ("xyz:DRAM", None), ("DRAM", "XYZ")]
+)
+async def test_market_snapshot_hip3_dex(info_mock, client, coin, dex):
+    route, _ = info_mock
+    out = await tools.get_market_snapshot(client, coin, dex)
+    assert out.startswith("xyz:DRAM perp")
+    raw = load_fixture("meta_and_asset_ctxs_xyz")[1][-1]
+    assert f"mark: {Decimal(raw['markPx']).normalize():,f} USD" in out
+    bodies = [json.loads(c.request.content) for c in route.calls]
+    assert {"type": "metaAndAssetCtxs", "dex": "xyz"} in bodies
+
+
+async def test_market_snapshot_unknown_dex_lists_available(info_mock, client):
+    route, _ = info_mock
+    with pytest.raises(HLToolError, match=r"unknown dex 'nope'; available: xyz, "):
+        await tools.get_market_snapshot(client, "DRAM", "nope")
+    kinds = [json.loads(c.request.content)["type"] for c in route.calls]
+    assert "metaAndAssetCtxs" not in kinds
+
+
+async def test_market_snapshot_unknown_coin_on_dex(info_mock, client):
+    with pytest.raises(HLToolError, match=r"on dex 'xyz'; did you mean XYZ:DRAM"):
+        await tools.get_market_snapshot(client, "DRAMM", "xyz")
+
+
+async def test_market_snapshot_main_dex_miss_hints_at_dex(info_mock, client):
+    with pytest.raises(HLToolError, match=r"pass its dex"):
+        await tools.get_market_snapshot(client, "DRAM")
+
+
 async def test_order_book_depth_and_spread(info_mock, client):
     out = await tools.get_order_book(client, "BTC", depth=3)
     assert "asks (showing 3 of 20 levels)" in out

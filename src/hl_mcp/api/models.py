@@ -35,6 +35,17 @@ class Meta(BaseModel):
 
 ### end assetMeta
 
+### start perpDexs
+
+
+class PerpDex(BaseModel):
+    name: str
+    fullName: str
+    deployer: str
+
+
+### end perpDexs
+
 ### start metaAndAssetCtxs
 
 

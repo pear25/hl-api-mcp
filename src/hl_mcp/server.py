@@ -29,6 +29,13 @@ Address = Annotated[
     Field(description="Wallet address (0x + 40 hex). Omit to use HL_DEFAULT_ADDRESS."),
 ]
 Coin = Annotated[str, Field(description="Perp ticker, e.g. BTC, ETH, SOL.")]
+Dex = Annotated[
+    str | None,
+    Field(
+        description="HIP-3 builder-deployed perp dex, e.g. xyz for xyz:DRAM. "
+        "Omit for the main Hyperliquid dex; a 'dex:COIN' coin also works."
+    ),
+]
 
 
 class AppState:
@@ -87,10 +94,10 @@ def _readable_errors[**P](
 
 @mcp.tool(annotations=READ_ONLY)
 @_readable_errors
-async def get_market_snapshot(coin: Coin, ctx: Context) -> str:
+async def get_market_snapshot(coin: Coin, ctx: Context, dex: Dex = None) -> str:
     """Mark/oracle price, 24h change, funding rate, open interest and volume for
-    one perp market."""
-    return await tools.get_market_snapshot(_state(ctx).client, coin)
+    one perp market, on the main dex or a HIP-3 dex."""
+    return await tools.get_market_snapshot(_state(ctx).client, coin, dex)
 
 
 @mcp.tool(annotations=READ_ONLY)
